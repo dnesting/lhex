@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-
-	"github.com/dnesting/gotrace"
 )
 
 // dataBuf separates out some important logic to guarantee one data-centric idea about what the
@@ -68,7 +66,7 @@ type Dumper struct {
 
 // NewDumper creates a Dumper writing to w, optionally writing labels where appropriate.
 func NewDumper(w io.Writer, labels *Labels) *Dumper {
-	gotrace.Log("NewDumper(%v)", labels)
+	//gotrace.Log("NewDumper(%v)", labels)
 	return &Dumper{w: w, labels: labels, labelIter: labels.iter(0)}
 }
 
@@ -101,7 +99,7 @@ func (d *Dumper) honorSeekIfNeeded() {
 // if you don't want to write any data with it).  Returns the number of bytes consumed from p and
 // whether an error was encountered writing the hex dump to the wrapped writer.
 func (d *Dumper) Write(p []byte) (n int, err error) {
-	defer gotrace.In("Write(%q)", p)()
+	//defer gotrace.In("Write(%d bytes)", len(p))()
 	// Check that we've encountered a Seek, and if so, finish up any previous segment before
 	// moving on.
 	d.honorSeekIfNeeded()
@@ -121,13 +119,13 @@ func (d *Dumper) Write(p []byte) (n int, err error) {
 
 		// If we're short, try to get more from p.
 		n += d.data.fill(p[n:], want)
-		gotrace.Log("have so far %q", p[:n])
+		//gotrace.Log("have so far %q", p[:n])
 
 		// We should always have <= want bytes at this point.  If we didn't get enough bytes from
 		// p to satisfy our want, that implies we're at n==len(p) and we'll leave it to a future
 		// Write or Close call to finish the line up.
 		if d.data.have == want {
-			gotrace.Log("== want=%d", want)
+			//gotrace.Log("== want=%d", want)
 			d.writePending = d.data.ofs%0x10 > 0 // no offset this time, so ensure we write one later
 			d.writeLabelsIfNeeded()
 			if d.data.have > 0 {

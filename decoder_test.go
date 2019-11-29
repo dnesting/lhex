@@ -1,7 +1,6 @@
 package lhex_test
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -10,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/dnesting/lhex"
+	"github.com/dnesting/sparse"
 )
 
 func TestDecodeEmpty(t *testing.T) {
@@ -111,20 +111,48 @@ func ExampleDecoder() {
 
 00000120  20 21 22 23 24 25 26 27  28 29 2A 2B 2C 2D 2E 2F  | !"#$%&'()*+,-./|
 `
-	offset := 0
-	dec := lhex.NewDecoder(bytes.NewReader([]byte(input)))
-	got, _ := ioutil.ReadAll(dec)
-	fmt.Printf("Got %d bytes at offset 0x%X\n", len(got), offset)
-	offset += len(got)
+	dec := lhex.NewDecoder(strings.NewReader(input))
+	var n, offset int64
+	var err error
 
-	skip, _ := dec.Next()
-	offset += int(skip)
-	fmt.Printf("Skipped %d bytes\n", skip)
+	for {
+		var got []byte
+		if got, err = ioutil.ReadAll(dec); err != nil {
+			break
+		}
+		fmt.Printf("Got %d bytes at offset 0x%X\n", len(got), offset)
+		offset += int64(len(got))
 
-	got, _ = ioutil.ReadAll(dec)
-	fmt.Printf("Got %d more bytes at offset 0x%X\n", len(got), offset)
+		if n, err = dec.Next(); err != nil {
+			break
+		}
+		fmt.Printf("Skipped %d bytes\n", n)
+		offset += n
+	}
+	fmt.Printf("%v", err)
 	// Output:
 	// Got 31 bytes at offset 0x0
 	// Skipped 257 bytes
-	// Got 16 more bytes at offset 0x120
+	// Got 16 bytes at offset 0x120
+	// EOF
+}
+
+func ExampleDecoder_sparseBuffer() {
+	// import "github.com/dnesting/sparse"
+
+	input := `
+00000000  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F  |................|
+00000010  10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E     |...............|
+
+00000120  20 21 22 23 24 25 26 27  28 29 2A 2B 2C 2D 2E 2F  | !"#$%&'()*+,-./|
+`
+	var buf sparse.Buffer
+	dec := lhex.NewDecoder(strings.NewReader(input))
+	sparse.Copy(&buf, dec)
+
+	buf.Seek(0x120, io.SeekStart)
+	got, _ := ioutil.ReadAll(&buf)
+	fmt.Printf("Got %d bytes at offset 0x120\n", len(got))
+	// Output:
+	// Got 16 bytes at offset 0x120
 }

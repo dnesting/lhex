@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-
-	"github.com/dnesting/gotrace"
 )
 
 type scanner struct {
@@ -33,18 +31,20 @@ func (d *scanner) next() {
 		d.ch = 0
 		d.eol = true
 	}
-	if d.eol {
-		gotrace.Log("EOL")
-	} else {
-		gotrace.Log("%q", d.ch)
-	}
+	/*
+		if d.eol {
+			gotrace.Log("EOL")
+		} else {
+			gotrace.Log("%q", d.ch)
+		}
+	*/
 }
 
 func (d *scanner) rewind(i int) {
 	if i > 0 && i == d.off {
 		return
 	}
-	gotrace.Log("rewind(%d)", i)
+	//gotrace.Log("rewind(%d)", i)
 	if i < 0 {
 		panic("cannot rewind line before 0")
 	}
@@ -55,11 +55,11 @@ func (d *scanner) rewind(i int) {
 
 // decodeLine reads and decodes a single line.  Returns io.EOF if no data was read.
 func (d *scanner) decodeLine() (offset int64, hasOffset bool, data []byte, label string, err error) {
-	defer gotrace.In("decodeLine")()
+	//defer gotrace.In("decodeLine")()
 	d.line, err = d.rd.ReadBytes('\n')
 	if err != nil {
 		if err != io.EOF || len(d.line) == 0 {
-			gotrace.Log(err.Error())
+			//gotrace.Log(err.Error())
 			return 0, false, nil, "", err
 		}
 	}
@@ -68,12 +68,12 @@ func (d *scanner) decodeLine() (offset int64, hasOffset bool, data []byte, label
 }
 
 func (d *scanner) scanLine() (offset int64, hasOffset bool, data []byte, label string, err error) {
-	defer gotrace.In("scanLine")()
+	//defer gotrace.In("scanLine")()
 	if isHex(d.ch) {
 		if offset, hasOffset, err = d.decodeOffset(); err != nil {
 			return
 		}
-		gotrace.Log("= offset %v %X", hasOffset, offset)
+		//gotrace.Log("= offset %v %X", hasOffset, offset)
 	} else if d.ch == ':' {
 		d.next()
 		label, err = d.decodeLabel()
@@ -88,10 +88,10 @@ func (d *scanner) scanLine() (offset int64, hasOffset bool, data []byte, label s
 			if _, err = d.decodeHexBytes(data[i : i+1]); err != nil {
 				return
 			}
-			gotrace.Log("= char %s", hex.EncodeToString(data[i:i+1]))
+			//gotrace.Log("= char %s", hex.EncodeToString(data[i:i+1]))
 			d.skipSpacesOrHyphen()
 			if !isHex(d.ch) {
-				gotrace.Log("done looking for hex chars, !hex(%c)", d.ch)
+				//gotrace.Log("done looking for hex chars, !hex(%c)", d.ch)
 				break
 			}
 		}
@@ -143,7 +143,7 @@ func (d *scanner) decodeHexBytes(buf []byte) (n int, err error) {
 	d.rewind(start + n*2)
 	if isHex(d.ch) {
 		err = fmt.Errorf("too many characters reading hex string: %q", d.line[start:d.off+1])
-	} else if !d.eol && d.ch != ' ' {
+	} else if !d.eol && d.ch != ' ' && d.ch != '-' {
 		err = fmt.Errorf("illegal character %q reading hex string: %q", d.ch, d.line[start:d.off+1])
 	}
 	return
