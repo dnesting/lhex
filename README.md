@@ -1,5 +1,7 @@
 # github.com/dnesting/lhex
 
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/dnesting/lhex)](https://pkg.go.dev/github.com/dnesting/lhex)
+
 This is a work in progress.
 
 This package provides a hexdump-based file format.  The intention is to allow for annotated
